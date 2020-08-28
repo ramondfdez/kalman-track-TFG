@@ -12,7 +12,7 @@ from mrcnn import utils
 from mrcnn import visualize 
 import mrcnn.model as modellib
 from mrcnn.model import log
-from tracker import Tracker
+from sort import Sort
 
 sys.path.append(os.path.join("coco/"))  # Path dataset coco (Common Objects in Context)
 import coco
@@ -110,8 +110,7 @@ def centros(boxes):
 # Variables previas
 writer = None
 min_distance = 50
-tracker = Tracker(150, 30, 5)
-skip_frame_count = 0
+tracker = Sort()
 
 input = str(args["input"])
 video_in = "videos/" + input
@@ -155,16 +154,12 @@ while True:
     personas, people_masks, people_scores = detecta_personas( r['rois'],
     r['masks'], r['class_ids'], r['scores'], class_detected)
 
-    centers = centros(personas)
-
     if (len(centers) > 0):
 
-      tracker.update(centers)
+      trackers = tracker.update(personas,frame)
 
-      for j in range(len(tracker.tracks)):
-
-        try:
-          c1, c2 = centers[j]
+      for j in range(len(trackers)):
+            
           y1, x1, y2, x2 = personas[j]
           d1 = abs(y1-c2)
           d2 = abs(x1-c1)
@@ -176,8 +171,8 @@ while True:
 
           x = int(tracker.tracks[j].trace[-1][0,0])
           y = int(tracker.tracks[j].trace[-1][0,1])
-          tl = (x-d2,y-d1)
-          br = (x+d2,y+d1)
+          tl = (x-10,y-10)
+          br = (x+10,y+10)
           cv2.rectangle(frame,tl,br,colors[j],1)
           cv2.putText(frame,"Persona: " + str(tracker.tracks[j].trackId+1), (x-10,y-10),0, 1, colors[j],2)
           cv2.circle(frame,(x,y), 6, colors[j],-1)
